@@ -1,0 +1,243 @@
+nav:
+  logo: 
+  display_title: true
+  display_post_title: true
+  fixed: false
+
+menu:
+  首页: / || fas fa-home
+  我的收藏: /favorites/ || fas fa-star
+
+background: /images/OIP-C-mrj5ma6p.webp
+
+disable_top_img: false
+index_top_img_height: 100vh
+
+mask:
+  header: false
+  footer: true
+
+index_layout: 3
+
+index_post_content:
+  method: false
+  length: 500
+
+cover:
+  index_enable: true
+  aside_enable: true
+  archives_enable: true
+  default_cover:
+
+rounded_corners_ui: true
+
+darkmode:
+  enable: true
+  button: true
+  autoChangeMode: false
+
+display_mode: light
+
+toc:
+  post: true
+  page: false
+  number: true
+  expand: false
+  scroll_percent: true
+
+readmode: true
+
+wordcount:
+  enable: false
+  post_wordcount: true
+  min2read: true
+  total_wordcount: true
+
+related_post:
+  enable: true
+  limit: 6
+
+noticeOutdate:
+  enable: false
+  style: flat
+  limit_day: 365
+  position: top
+
+post_copyright:
+  enable: true
+  decode: false
+  license: CC BY-NC-SA 4.0
+  license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+translate:
+  enable: false
+  default: 繁
+  defaultEncoding: 2
+
+series:
+  enable: false
+
+post_pagination: 1
+
+code_blocks:
+  theme: light
+  macStyle: false
+  height_limit: false
+  word_wrap: false
+  copy: true
+  language: true
+  shrink: false
+  fullpage: false
+
+math:
+  use: 
+  per_page: true
+  hide_scrollbar: false
+
+search:
+  use: 
+  placeholder: 
+  local_search:
+    preload: false
+
+error_404:
+  enable: false
+  subtitle: 'Page Not Found'
+
+pjax:
+  enable: false
+
+instantpage: false
+
+comments:
+  use: 
+  text: true
+  lazyload: false
+  count: false
+
+share:
+  use: sharejs
+  sharejs:
+    sites: facebook,x,wechat,weibo,qq
+
+chat:
+  use: 
+
+busuanzi:
+  site_uv: true
+  site_pv: true
+  page_pv: true
+
+google_adsense:
+  enable: false
+  auto_ads: true
+  client: 
+
+activate_power_mode:
+  enable: false
+  colorful: false
+  shake: false
+  mobile: false
+
+fireworks:
+  enable: false
+  zIndex: 9999
+  mobile: false
+
+click_heart:
+  enable: false
+  mobile: false
+
+clickShowText:
+  enable: false
+  text: []
+  fontSize: 15px
+  random: false
+  mobile: false
+
+lightbox: 
+
+canvas_ribbon:
+  enable: false
+  size: 150
+  alpha: 0.6
+  zIndex: -1
+  click_to_change: false
+  mobile: false
+
+canvas_fluttering_ribbon:
+  enable: false
+  mobile: false
+
+canvas_nest:
+  enable: false
+  color: '0,0,255'
+  opacity: 0.7
+  zIndex: -1
+  count: 99
+  mobile: false
+
+enter_transitions: true
+
+preloader:
+  enable: false
+  source: 1
+
+lazyload:
+  enable: false
+  field: site
+  blur: false
+
+pwa:
+  enable: false
+
+copy:
+  enable: true
+  copyright:
+    enable: false
+    limit_count: 150
+
+snackbar:
+  enable: false
+  position: bottom-left
+  bg_light: '#49b1f5'
+  bg_dark: '#1f1f1f'
+
+mermaid:
+  enable: false
+  code_write: false
+
+chartjs:
+  enable: false
+
+abcjs:
+  enable: false
+  per_page: true
+
+aplayerInject:
+  enable: false
+  per_page: true
+
+avatar:
+  img: 
+  effect: false
+
+footer:
+  owner:
+    enable: true
+    since: 
+  copyright:
+    enable: true
+    version: true
+  custom_text: 
+
+inject:
+  head:
+    - <link rel="stylesheet" href="/css/custom.css">
+    - <link rel="stylesheet" href="/css/comments.css">
+    - <link rel="stylesheet" href="/css/favorites.css">
+  bottom:
+    - <script>window.HEXO_MESSAGE_API='http://207.57.123.17:4001/api/comments';</script>
+    - <script src="/js/comments.js"></script>
+    - <script src="/js/favorites.js"></script>
+    - <script src="/js/snow.js"></script>

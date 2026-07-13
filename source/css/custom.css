@@ -1,0 +1,125 @@
+/* ===== 参考 bbftt.github.io 样式（浅色模式） ===== */
+
+body {
+  background-color: transparent !important;
+}
+
+#web_bg {
+  background-attachment: local !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+}
+
+/* 去掉头图/背景遮罩，保持完全透明 */
+#page-header:not(.not-top-img):before,
+[data-theme="dark"] #web_bg:before,
+[data-theme="dark"] #page-header:before,
+[data-theme="light"] #web_bg:before,
+[data-theme="light"] #page-header:before {
+  display: none !important;
+}
+
+main,
+#content-inner,
+#body-wrap {
+  background: transparent !important;
+}
+
+/* 首页全屏头图 */
+#page-header.full_page {
+  height: 100vh !important;
+  background: transparent !important;
+}
+
+#page-header.full_page #site-info {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#page-header.full_page #site-title {
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+}
+
+#page-header.full_page #scroll-down {
+  color: #fff;
+}
+
+/* 头图区域导航栏透明 + 白色文字 */
+#page-header.full_page #nav {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#page-header.full_page #nav a,
+#page-header.full_page #nav .site-page,
+#page-header.full_page #nav #site-name {
+  color: rgba(255, 255, 255, 0.85) !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+#page-header.full_page #nav a:hover {
+  color: #fff !important;
+}
+
+/* 滚动后导航栏 */
+[data-theme="light"] #page-header.not-top-img #nav,
+[data-theme="light"] #nav.fixed {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="dark"] #page-header.not-top-img #nav,
+[data-theme="dark"] #nav.fixed {
+  background: rgba(18, 18, 18, 0.85) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* 浅色半透明卡片 */
+[data-theme="light"] #recent-posts > .recent-post-item,
+[data-theme="light"] .card-widget,
+[data-theme="light"] #aside-content .card-widget,
+[data-theme="light"] #post,
+[data-theme="light"] #page,
+[data-theme="light"] .layout > .recent-posts .pagination > :not(.space) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(4px);
+}
+
+/* 深色半透明卡片 */
+[data-theme="dark"] #recent-posts > .recent-post-item,
+[data-theme="dark"] .card-widget,
+[data-theme="dark"] #aside-content .card-widget,
+[data-theme="dark"] #post,
+[data-theme="dark"] #page,
+[data-theme="dark"] .layout > .recent-posts .pagination > :not(.space) {
+  background: rgba(18, 18, 18, 0.92) !important;
+  border-radius: 8px !important;
+  backdrop-filter: blur(4px);
+}
+
+#article-container img {
+  max-width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+#footer {
+  background: transparent !important;
+}
+
+#content-inner {
+  padding-top: 20px;
+}
+
+#snow-canvas {
+  z-index: 9 !important;
+  pointer-events: none;
+}

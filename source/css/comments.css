@@ -1,0 +1,28 @@
+.cmt-section { margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
+.cmt-title { font-size: 18px; margin-bottom: 12px; }
+.msg-desc { font-size: 13px; color: #64748b; margin-bottom: 16px; line-height: 1.6; }
+.cmt-form { background: #f8fafc; border-radius: 12px; padding: 20px; }
+.cmt-form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+.cmt-form-row input { flex: 1; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border .2s; }
+.cmt-form-row input:focus { border-color: #4f46e5; }
+#cmt-input { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; transition: border .2s; }
+#cmt-input:focus { border-color: #4f46e5; }
+#cmt-reply-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: #6366f1; background: #eef2ff; padding: 6px 12px; border-radius: 6px; }
+#cmt-reply-info button { background: none; border: none; cursor: pointer; color: #999; font-size: 14px; }
+.cmt-form-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+.cmt-hint { font-size: 12px; color: #94a3b8; }
+#cmt-submit { padding: 8px 24px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; transition: background .2s; }
+#cmt-submit:hover { background: #4338ca; }
+#cmt-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+.msg-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; text-align: center; }
+.msg-success p { margin: 0 0 16px; color: #166534; font-size: 15px; }
+.msg-success button { padding: 8px 20px; background: #fff; border: 1px solid #86efac; border-radius: 8px; color: #166534; cursor: pointer; font-size: 14px; }
+.msg-success button:hover { background: #dcfce7; }
+
+[data-theme="dark"] .cmt-form { background: #1e293b; }
+[data-theme="dark"] .cmt-form-row input, [data-theme="dark"] #cmt-input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+[data-theme="dark"] .msg-desc { color: #94a3b8; }
+[data-theme="dark"] .msg-success { background: #14532d; border-color: #166534; }
+[data-theme="dark"] .msg-success p { color: #bbf7d0; }
+[data-theme="dark"] .msg-success button { background: #0f172a; border-color: #166534; color: #bbf7d0; }

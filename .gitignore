@@ -1,0 +1,16 @@
+.DS_Store
+Thumbs.db
+db.json
+*.log
+node_modules/
+public/
+.deploy*/
+_multiconfig.yml
+
+# 主题配置备份
+_config.butterfly.yml.bak.*
+_config.yml.bak.*
+
+# 管理后台敏感数据（密码、留言）
+admin-panel/data/auth.json
+admin-panel/data/comments_*.json
