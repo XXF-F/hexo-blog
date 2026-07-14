@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hexo 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/marked@9/lib/marked.min.js">
+  <style>.page-section { display: none; } .page-section.active { display: block; }</style>
+</head>
+<body>
+
+<!-- Login Page -->
+<div class="login-page" id="login-page">
+  <div class="login-box">
+    <h2>Hexo 管理后台</h2>
+    <p>请登录以继续</p>
+    <div class="login-error" id="login-error">用户名或密码错误</div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="login-user" placeholder="admin">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="login-pass" placeholder="请输入密码" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<!-- App (hidden until login) -->
+<div id="app-wrap" style="display:none;width:100%;min-height:100vh">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">H</div>
+    <div>
+      <h1>Hexo 管理</h1>
+      <small>Butterfly</small>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">内容</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">◉</span> 仪表盘</div>
+    <div class="nav-item" data-page="posts"><span class="icon">▤</span> 文章 <span class="badge" id="post-count">0</span></div>
+    <div class="nav-item" data-page="editor"><span class="icon">✎</span> 写文章</div>
+    <div class="nav-item" data-page="media"><span class="icon">▣</span> 媒体库</div>
+    <div class="nav-item" data-page="comments"><span class="icon">◫</span> 留言</div>
+
+    <div class="nav-section">外观</div>
+    <div class="nav-item" data-page="theme-config"><span class="icon">◈</span> 主题设置</div>
+    <div class="nav-item" data-page="theme-files"><span class="icon">▦</span> 主题文件</div>
+    <div class="nav-item" data-page="custom-css"><span class="icon">◇</span> 自定义CSS</div>
+
+    <div class="nav-section">系统</div>
+    <div class="nav-item" data-page="site-config"><span class="icon">⚙</span> 站点设置</div>
+    <div class="nav-item" data-page="deploy"><span class="icon">↗</span> 生成部署</div>
+    <div class="nav-item" data-page="account"><span class="icon">◎</span> 账号</div>
+  </nav>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+  <header class="topbar">
+    <h2 id="page-title">仪表盘</h2>
+    <div class="topbar-actions">
+      <a href="http://localhost:4000" target="_blank" class="btn btn-outline btn-sm">预览站点</a>
+      <button class="btn btn-primary btn-sm" onclick="newPost()">写文章</button>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">退出</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- ========== Dashboard ========== -->
+    <div class="page-section active" id="page-dashboard">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="card mb-24">
+        <div class="card-header">快捷操作</div>
+        <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="newPost()">+ 写文章</button>
+          <button class="btn btn-outline" onclick="navigateTo('media')">上传图片</button>
+          <button class="btn btn-outline" onclick="navigateTo('theme-config')">主题设置</button>
+          <button class="btn btn-outline" onclick="navigateTo('theme-config');setTimeout(()=>document.getElementById('bg-section')?.scrollIntoView({behavior:'smooth'}),200)">换背景</button>
+          <button class="btn btn-outline" onclick="runGenerate()">重新生成</button>
+          <button class="btn btn-outline" onclick="navigateTo('comments')">查看留言</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">最近文章</div>
+        <div class="card-body table-wrap" id="recent-posts"></div>
+      </div>
+    </div>
+
+    <!-- ========== Posts List ========== -->
+    <div class="page-section" id="page-posts">
+      <div class="flex-between mb-16">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="post-search" placeholder="搜索文章..." oninput="filterPosts()">
+        </div>
+        <button class="btn btn-primary" onclick="newPost()">✏️ 新建文章</button>
+      </div>
+      <div class="card">
+        <div class="card-body table-wrap" id="posts-table"></div>
+      </div>
+    </div>
+
+    <!-- ========== Post Editor ========== -->
+    <div class="page-section" id="page-editor">
+      <div class="card mb-16">
+        <div class="card-body">
+          <div class="form-group">
+            <label>文章标题</label>
+            <input type="text" id="ed-title" placeholder="输入文章标题...">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>标签（逗号分隔）</label>
+              <input type="text" id="ed-tags" placeholder="标签1, 标签2">
+            </div>
+            <div class="form-group">
+              <label>分类（逗号分隔）</label>
+              <input type="text" id="ed-categories" placeholder="分类1, 分类2">
+            </div>
+            <div class="form-group">
+              <label>封面图片</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <div id="ed-cover-preview-wrap" style="width:48px;height:48px;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#f9fafb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <span class="text-sm text-muted" id="ed-cover-preview-placeholder" style="font-size:11px;">无</span>
+                  <img id="ed-cover-preview-img" src="" alt="封面预览" style="display:none;width:100%;height:100%;object-fit:cover;">
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('ed-cover-file').click()">上传封面</button>
+                <button type="button" class="btn btn-outline btn-sm" id="ed-cover-clear" onclick="clearCover()" style="display:none;">清除</button>
+                <input type="file" id="ed-cover-file" accept="image/*" style="display:none" onchange="uploadCoverFile(this.files)">
+                <input type="hidden" id="ed-cover">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div class="editor-toolbar">
+          <button onclick="insertMd('**','**')" title="加粗"><b>B</b></button>
+          <button onclick="insertMd('*','*')" title="斜体"><i>I</i></button>
+          <button onclick="insertMd('~~','~~')" title="删除线"><s>S</s></button>
+          <button onclick="insertMd('# ','')" title="标题一">H1</button>
+          <button onclick="insertMd('## ','')" title="标题二">H2</button>
+          <button onclick="insertMd('### ','')" title="标题三">H3</button>
+          <button onclick="insertMd('> ','')" title="引用">❝</button>
+          <button onclick="insertMd('`','`')" title="行内代码">&lt;/&gt;</button>
+          <button onclick="insertMd('```\n','\n```')" title="代码块">{ }</button>
+          <button onclick="insertMd('- ','')" title="无序列表">• 列表</button>
+          <button onclick="insertMd('1. ','')" title="有序列表">1. 列表</button>
+          <button onclick="insertMd('![alt](',')')" title="插入图片">🖼️</button>
+          <button onclick="insertMd('[链接文字](',')')" title="插入链接">🔗</button>
+          <button onclick="insertMd('---\n','')" title="分割线">—</button>
+          <button onclick="openMediaPicker()" title="从媒体库选择">📁 媒体库</button>
+        </div>
+        <div class="editor-area">
+          <textarea id="ed-content" placeholder="在此输入 Markdown 内容...&#10;&#10;💡 支持直接粘贴截图 或 拖拽图片文件到此处自动上传" oninput="updatePreview()"></textarea>
+          <div class="editor-preview" id="ed-preview"></div>
+        </div>
+      </div>
+      <div class="flex-between">
+        <div>
+          <label style="font-size:14px;cursor:pointer;"><input type="checkbox" id="ed-draft"> 保存为草稿</label>
+          <input type="hidden" id="ed-slug">
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-outline" onclick="resetEditor()">清空</button>
+          <button class="btn btn-primary btn-lg" onclick="savePost()">💾 保存文章</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Media Library ========== -->
+    <div class="page-section" id="page-media">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" multiple accept="image/*,video/*" onchange="uploadFiles(this.files)">
+        <div class="icon">📤</div>
+        <p>点击或拖拽文件到此处上传</p>
+        <p class="text-sm text-muted mt-16">支持 JPG、PNG、GIF、WebP、SVG、MP4 格式，单文件最大 20MB</p>
+      </div>
+      <div class="media-grid" id="media-grid"></div>
+    </div>
+
+    <!-- ========== Theme Config ========== -->
+    <div class="page-section" id="page-theme-config">
+      <div class="flex-between mb-16">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchConfigTab('theme','form')">可视化设置</button>
+          <button class="tab-btn" onclick="switchConfigTab('theme','raw')">高级编辑</button>
+        </div>
+        <button class="btn btn-primary" onclick="saveThemeConfig()">💾 保存配置</button>
+      </div>
+
+      <!-- Visual Form -->
+      <div id="theme-form-view">
+        <!-- 全站背景 -->
+        <div class="card mb-16" id="bg-section">
+          <div class="card-header">全站背景图</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+              <div id="bg-preview-wrap" style="width:280px;height:160px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;background:#18171d;display:flex;align-items:center;justify-content:center;">
+                <span class="text-sm text-muted" id="bg-preview-placeholder">暂无背景预览</span>
+                <img id="bg-preview-img" src="" alt="背景预览" style="display:none;width:100%;height:100%;object-fit:cover;">
+              </div>
+              <div>
+                <div class="dropzone" style="padding:20px;margin-bottom:8px;" id="bg-dropzone" onclick="document.getElementById('bg-file-input').click()">
+                  <input type="file" id="bg-file-input" accept="image/*" onchange="uploadBackgroundFile(this.files)" style="display:none">
+                  <p style="margin:0;font-size:13px;">点击或拖拽图片上传背景</p>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                  <label>背景图 URL</label>
+                  <input type="url" id="tc-background" placeholder="https://example.com/bg.jpg 或 /images/bg.jpg" oninput="renderBackgroundPreview()">
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary" onclick="applyBackground()">应用背景</button>
+                  <a href="http://localhost:4000" target="_blank" class="btn btn-outline">预览站点</a>
+                </div>
+                <p class="text-sm text-muted" style="margin:8px 0 0;">上传图片后点击「应用背景」，会自动保存并重新生成站点。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🎨 设计风格 -->
+        <div class="card mb-16">
+          <div class="card-header">🎨 导航栏</div>
+          <div class="card-body">
+            <div class="form-group"><label>Logo 图片</label><input type="text" id="tc-nav-logo" placeholder="留空则不显示 Logo，可填图片地址"></div>
+            <div class="form-group">
+              <label>导航菜单</label>
+              <p class="text-sm text-muted" style="margin-bottom:10px;">填写菜单名称和跳转链接即可，图标可直接下拉选择。</p>
+              <div id="nav-menu-editor" class="menu-editor"></div>
+              <button type="button" class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="addMenuItem()">+ 添加菜单</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>显示标题</label><select id="tc-nav-display-title"><option value="true">是</option><option value="false">否</option></select></div>
+              <div class="form-group"><label>显示文章标题</label><select id="tc-nav-display-post-title"><option value="true">是</option><option value="false">否</option></select></div>
+              <div class="form-group"><label>固定导航栏</label><select id="tc-nav-fixed"><option value="false">否</option><option value="true">是</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">🎨 首页布局与封面</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>卡片布局</label><select id="tc-index-layout"><option value="1">封面左+文字右</option><option value="2">封面右+文字左</option><option value="3">左右交替</option><option value="4">上图下文</option><option value="5">文字覆盖封面</option><option value="6">瀑布流-上图下文</option><option value="7">瀑布流-文字覆盖</option></select></div>
+              <div class="form-group"><label>摘要方式</label><select id="tc-post-content-method"><option value="1">description</option><option value="2">自动截取</option><option value="3">截取+设置长度</option><option value="false">不显示</option></select></div>
+              <div class="form-group"><label>摘要长度</label><input type="number" id="tc-post-content-length" value="500"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>首页封面</label><select id="tc-cover-index"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>侧栏封面</label><select id="tc-cover-aside"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>归档封面</label><select id="tc-cover-archives"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>圆角UI</label><select id="tc-rounded-corners"><option value="true">开启</option><option value="false">关闭</option></select></div>
+            </div>
+            <div class="form-group">
+              <label>默认封面图</label>
+              <div class="dropzone" style="padding:20px;margin-bottom:8px;" id="cover-dropzone" onclick="document.getElementById('cover-file-input').click()">
+                <input type="file" id="cover-file-input" multiple accept="image/*" onchange="uploadCoverFiles(this.files)" style="display:none">
+                <p style="margin:0;font-size:13px;">点击或拖拽图片上传为默认封面</p>
+              </div>
+              <div id="cover-preview-list" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"></div>
+              <textarea id="tc-cover-default" rows="3" placeholder="上传后自动填入，也可手动输入URL（每行一个）" style="font-size:12px;"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">🎨 暗色模式与配色</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>暗色模式</label><select id="tc-darkmode-enable"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>暗色模式按钮</label><select id="tc-darkmode-button"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+              <div class="form-group"><label>自动切换</label><select id="tc-darkmode-auto"><option value="false">关闭</option><option value="1">跟随系统</option><option value="2">定时切换(6PM-6AM)</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>默认模式</label><select id="tc-display-mode"><option value="light">浅色</option><option value="dark">深色</option></select></div>
+              <div class="form-group"><label>主色调</label><input type="text" id="tc-theme-color-main" placeholder="#49B1F5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📝 内容特色 -->
+        <div class="card mb-16">
+          <div class="card-header">📝 文章设置</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>TOC目录(文章)</label><select id="tc-toc-post"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>TOC编号</label><select id="tc-toc-number"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+              <div class="form-group"><label>滚动百分比</label><select id="tc-toc-scroll"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+              <div class="form-group"><label>阅读模式</label><select id="tc-readmode"><option value="true">开启</option><option value="false">关闭</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>字数统计</label><select id="tc-wordcount"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>阅读时间</label><select id="tc-min2read"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+              <div class="form-group"><label>相关文章</label><select id="tc-related-post"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>相关文章数量</label><input type="number" id="tc-related-limit" value="6" min="1" max="12"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>过时提醒</label><select id="tc-outdate-enable"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>过时天数</label><input type="number" id="tc-outdate-days" value="365"></div>
+              <div class="form-group"><label>文章版权</label><select id="tc-copyright"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+              <div class="form-group"><label>版权协议</label><input type="text" id="tc-copyright-license" value="CC BY-NC-SA 4.0"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>繁简转换</label><select id="tc-translate-enable"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>文章系列</label><select id="tc-series"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>文章分页</label><select id="tc-pagination"><option value="1">下一篇→旧文章</option><option value="2">下一篇→新文章</option><option value="false">关闭</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🎨 代码显示 -->
+        <div class="card mb-16">
+          <div class="card-header">🎨 代码块</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>代码主题</label><select id="tc-code-theme"><option value="light">Light</option><option value="darker">Darker</option><option value="pale night">Pale Night</option><option value="ocean">Ocean</option></select></div>
+              <div class="form-group"><label>Mac 样式</label><select id="tc-code-mac"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>代码复制</label><select id="tc-code-copy"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>显示语言</label><select id="tc-code-lang"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>代码折叠</label><select id="tc-code-shrink"><option value="false">展开</option><option value="true">折叠</option><option value="none">展开+隐藏按钮</option></select></div>
+              <div class="form-group"><label>自动换行</label><select id="tc-code-wrap"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>高度限制(px)</label><input type="text" id="tc-code-height" placeholder="false 或 数字如 400"></div>
+              <div class="form-group"><label>全屏按钮</label><select id="tc-code-fullpage"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 数学公式 -->
+        <div class="card mb-16">
+          <div class="card-header">📐 数学公式</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>公式引擎</label><select id="tc-math-use"><option value="">关闭</option><option value="mathjax">MathJax</option><option value="katex">KaTeX</option></select></div>
+              <div class="form-group"><label>每页加载</label><select id="tc-math-perpage"><option value="true">是</option><option value="false">否(需在文章头标注)</option></select></div>
+              <div class="form-group"><label>隐藏滚动条</label><select id="tc-math-scrollbar"><option value="false">否</option><option value="true">是</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔍 搜索与导航 -->
+        <div class="card mb-16">
+          <div class="card-header">🔍 搜索</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>搜索引擎</label><select id="tc-search-use"><option value="">关闭</option><option value="local_search">本地搜索</option><option value="algolia_search">Algolia</option><option value="docsearch">DocSearch</option></select></div>
+              <div class="form-group"><label>搜索框提示文字</label><input type="text" id="tc-search-placeholder" placeholder="搜索..."></div>
+              <div class="form-group"><label>预加载搜索数据</label><select id="tc-search-preload"><option value="false">否</option><option value="true">是</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">🔍 404页面 / Pjax</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>404页面</label><select id="tc-404-enable"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>404副标题</label><input type="text" id="tc-404-subtitle" placeholder="Page Not Found"></div>
+              <div class="form-group"><label>Pjax无刷新</label><select id="tc-pjax"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>Instantpage预加载</label><select id="tc-instantpage"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 💬 社会互动 -->
+        <div class="card mb-16">
+          <div class="card-header">💬 评论系统</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>评论系统（可填两个逗号分隔）</label><input type="text" id="tc-comments-use" placeholder="Twikoo 或 Waline,Giscus"></div>
+              <div class="form-group"><label>懒加载评论</label><select id="tc-comments-lazy"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>评论计数</label><select id="tc-comments-count"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Twikoo envId</label><input type="text" id="tc-twikoo-envid" placeholder=""></div>
+              <div class="form-group"><label>Waline serverURL</label><input type="text" id="tc-waline-server" placeholder="https://your-waline.vercel.app"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Giscus repo</label><input type="text" id="tc-giscus-repo" placeholder="user/repo"></div>
+              <div class="form-group"><label>Giscus repo_id</label><input type="text" id="tc-giscus-repoid" placeholder=""></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Giscus category_id</label><input type="text" id="tc-giscus-catid" placeholder=""></div>
+              <div class="form-group"><label>Gitalk client_id</label><input type="text" id="tc-gitalk-clientid" placeholder=""></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">💬 分享与聊天</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>分享组件</label><select id="tc-share-use"><option value="sharejs">ShareJS</option><option value="addtoany">AddToAny</option><option value="">关闭</option></select></div>
+              <div class="form-group"><label>ShareJS平台</label><input type="text" id="tc-share-sites" value="facebook,x,wechat,weibo,qq"></div>
+              <div class="form-group"><label>实时聊天</label><select id="tc-chat-use"><option value="">关闭</option><option value="chatra">Chatra</option><option value="tidio">Tidio</option><option value="crisp">Crisp</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Chatra ID</label><input type="text" id="tc-chatra-id" placeholder=""></div>
+              <div class="form-group"><label>Tidio Key</label><input type="text" id="tc-tidio-key" placeholder=""></div>
+              <div class="form-group"><label>Crisp Website ID</label><input type="text" id="tc-crisp-id" placeholder=""></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📊 分析与统计 -->
+        <div class="card mb-16">
+          <div class="card-header">📊 分析统计</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>不蒜子UV</label><select id="tc-busuanzi-uv"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>不蒜子PV</label><select id="tc-busuanzi-pv"><option value="true">开启</option><option value="false">关闭</option></select></div>
+              <div class="form-group"><label>文章PV</label><select id="tc-busuanzi-page"><option value="true">开启</option><option value="false">关闭</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Google Analytics ID</label><input type="text" id="tc-google-analytics" placeholder="G-XXXXXXX"></div>
+              <div class="form-group"><label>百度统计 ID</label><input type="text" id="tc-baidu-analytics" placeholder=""></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Cloudflare Analytics</label><input type="text" id="tc-cf-analytics" placeholder="token"></div>
+              <div class="form-group"><label>Microsoft Clarity</label><input type="text" id="tc-ms-clarity" placeholder="project id"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">📊 广告与验证</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Google AdSense</label><select id="tc-adsense-enable"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>AdSense Client ID</label><input type="text" id="tc-adsense-client" placeholder="ca-pub-xxxxx"></div>
+              <div class="form-group"><label>自动广告</label><select id="tc-adsense-auto"><option value="true">开启</option><option value="false">关闭</option></select></div>
+            </div>
+            <div class="form-group"><label>站长验证（每行: name: content，如 google-site-verification: xxxxx）</label><textarea id="tc-site-verify" rows="3" placeholder="google-site-verification: xxxxx&#10;baidu-site-verification: xxxxx"></textarea></div>
+          </div>
+        </div>
+
+        <!-- 🎪 视觉特效 -->
+        <div class="card mb-16">
+          <div class="card-header">🎪 视觉特效</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>打字特效</label><select id="tc-power-mode"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>彩色打字</label><select id="tc-power-colorful"><option value="true">是</option><option value="false">否</option></select></div>
+              <div class="form-group"><label>抖动效果</label><select id="tc-power-shake"><option value="true">是</option><option value="false">否</option></select></div>
+              <div class="form-group"><label>烟花点击</label><select id="tc-fireworks"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>爱心点击</label><select id="tc-click-heart"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>文字点击</label><select id="tc-click-text"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>点击文字内容（逗号分隔）</label><input type="text" id="tc-click-text-content" placeholder="I,LOVE,YOU"></div>
+              <div class="form-group"><label>图片灯箱</label><select id="tc-lightbox"><option value="">关闭</option><option value="fancybox">Fancybox</option><option value="medium_zoom">Medium Zoom</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>静态彩带</label><select id="tc-ribbon"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>飘动彩带</label><select id="tc-fluttering"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>Canvas Nest</label><select id="tc-canvas-nest"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>页面过渡动画</label><select id="tc-enter-transitions"><option value="true">开启</option><option value="false">关闭</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">🎪 加载动画 / 懒加载</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>预加载动画</label><select id="tc-preloader"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>动画类型</label><select id="tc-preloader-source"><option value="1">全屏加载</option><option value="2">Pace进度条</option></select></div>
+              <div class="form-group"><label>图片懒加载</label><select id="tc-lazyload-enable"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>懒加载模糊效果</label><select id="tc-lazyload-blur"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🛠️ 高级功能 -->
+        <div class="card mb-16">
+          <div class="card-header">🛠️ 高级功能</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>PWA 应用</label><select id="tc-pwa"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>防拷保护</label><select id="tc-copy-enable"><option value="true">允许复制</option><option value="false">禁止复制</option></select></div>
+              <div class="form-group"><label>复制追加版权</label><select id="tc-copy-copyright"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>Snackbar通知</label><select id="tc-snackbar"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>Mermaid图表</label><select id="tc-mermaid"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>Chart.js图表</label><select id="tc-chartjs"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>ABCJS乐谱</label><select id="tc-abcjs"><option value="false">关闭</option><option value="true">开启</option></select></div>
+              <div class="form-group"><label>APlayer音乐</label><select id="tc-aplayer"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 头像/社交/页脚 -->
+        <div class="card mb-16">
+          <div class="card-header">👤 头像与社交</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>头像 URL</label><input type="text" id="tc-avatar-img" placeholder="/img/avatar.png"></div>
+              <div class="form-group"><label>头像旋转</label><select id="tc-avatar-effect"><option value="false">关闭</option><option value="true">开启</option></select></div>
+            </div>
+            <div class="form-group"><label>社交链接（每行: 图标: 链接 || 名称 || 颜色）</label><textarea id="tc-social" rows="3" placeholder="fab fa-github: https://github.com/xxx || Github || '#24292e'"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">🦶 页脚设置</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>建站年份</label><input type="text" id="tc-footer-since" placeholder="2024"></div>
+              <div class="form-group"><label>自定义文字(支持HTML)</label><input type="text" id="tc-footer-custom" placeholder=""></div>
+              <div class="form-group"><label>显示主题版权</label><select id="tc-footer-copyright"><option value="true">显示</option><option value="false">隐藏</option></select></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raw YAML Editor (hidden by default) -->
+      <div id="theme-raw-view" style="display:none">
+        <div class="card">
+          <div class="card-header">YAML 源码编辑</div>
+          <div class="card-body">
+            <p class="text-sm text-muted mb-16">直接编辑 <code>_config.butterfly.yml</code>。保存前会自动备份。</p>
+            <textarea id="theme-config-editor" class="code-editor" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Theme Files ========== -->
+    <div class="page-section" id="page-theme-files">
+      <div class="card">
+        <div class="card-header">
+          <span>主题文件管理</span>
+          <button class="btn btn-primary btn-sm" id="save-theme-file-btn" onclick="saveThemeFile()" style="display:none">💾 保存文件</button>
+        </div>
+        <div class="card-body">
+          <div class="breadcrumb" id="file-breadcrumb"></div>
+          <div id="file-browser"></div>
+          <div id="file-editor-wrap" style="display:none">
+            <textarea id="theme-file-editor" class="code-editor" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Custom CSS ========== -->
+    <div class="page-section" id="page-custom-css">
+      <div class="card">
+        <div class="card-header">
+          <span>自定义 CSS</span>
+          <button class="btn btn-primary btn-sm" onclick="saveCustomCSS()">💾 保存</button>
+        </div>
+        <div class="card-body">
+          <p class="text-sm text-muted mb-16">在这里添加自定义 CSS 样式。保存后需重新生成站点才能生效。</p>
+          <textarea id="custom-css-editor" class="code-editor" spellcheck="false" style="min-height:400px"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Site Config ========== -->
+    <div class="page-section" id="page-site-config">
+      <div class="flex-between mb-16">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchConfigTab('site','form')">可视化设置</button>
+          <button class="tab-btn" onclick="switchConfigTab('site','raw')">高级编辑</button>
+        </div>
+        <button class="btn btn-primary" onclick="saveSiteConfig()">💾 保存配置</button>
+      </div>
+
+      <!-- Visual Form -->
+      <div id="site-form-view">
+        <div class="card mb-16">
+          <div class="card-header">基本信息</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>站点标题</label><input type="text" id="sc-title" placeholder="我的博客"></div>
+              <div class="form-group"><label>副标题</label><input type="text" id="sc-subtitle" placeholder="一句话描述"></div>
+            </div>
+            <div class="form-group"><label>站点描述</label><textarea id="sc-description" rows="2" placeholder="网站描述，用于SEO"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>关键词</label><input type="text" id="sc-keywords" placeholder="关键词（逗号分隔）"></div>
+              <div class="form-group"><label>作者名称</label><input type="text" id="sc-author" placeholder="John Doe"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">网站地址</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>网站 URL</label><input type="url" id="sc-url" placeholder="https://example.com"></div>
+              <div class="form-group"><label>文章永久链接格式</label><input type="text" id="sc-permalink" placeholder=":year/:month/:day/:title/"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">语言和区域</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group"><label>语言</label>
+                <select id="sc-language">
+                  <option value="zh-CN">简体中文</option>
+                  <option value="zh-TW">繁体中文</option>
+                  <option value="en">English</option>
+                  <option value="ja">日本語</option>
+                  <option value="ko">한국어</option>
+                </select>
+              </div>
+              <div class="form-group"><label>时区</label><input type="text" id="sc-timezone" placeholder="Asia/Shanghai（留空自动检测）"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">文章设置</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+              <div class="form-group"><label>每页显示文章数</label><input type="number" id="sc-per-page" value="10" min="1"></div>
+              <div class="form-group"><label>默认布局</label>
+                <select id="sc-default-layout"><option value="post">post</option><option value="page">page</option><option value="draft">draft</option></select>
+              </div>
+              <div class="form-group"><label>使用的主题</label><input type="text" id="sc-theme" placeholder="butterfly"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raw YAML Editor (hidden by default) -->
+      <div id="site-raw-view" style="display:none">
+        <div class="card">
+          <div class="card-header">YAML 源码编辑</div>
+          <div class="card-body">
+            <p class="text-sm text-muted mb-16">直接编辑 <code>_config.yml</code>。保存前会自动备份。</p>
+            <textarea id="site-config-editor" class="code-editor" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Messages Management ========== -->
+    <div class="page-section" id="page-comments">
+      <div class="card">
+        <div class="card-header">
+          <span>全部留言（仅管理员可见）</span>
+          <button class="btn btn-outline btn-sm" onclick="loadAllComments()">🔄 刷新</button>
+        </div>
+        <div class="card-body table-wrap" id="comments-list"></div>
+      </div>
+    </div>
+
+    <!-- ========== Deploy ========== -->
+    <div class="page-section" id="page-deploy">
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="quick-action" onclick="runClean()">
+          <div class="qa-title">清理缓存</div>
+          <div class="qa-desc">hexo clean</div>
+        </div>
+        <div class="quick-action" onclick="runGenerate()">
+          <div class="qa-title">重新生成</div>
+          <div class="qa-desc">hexo clean + generate</div>
+        </div>
+        <div class="quick-action" onclick="runDeploy()">
+          <div class="qa-title">部署上线</div>
+          <div class="qa-desc">hexo deploy</div>
+        </div>
+      </div>
+      <div class="card mt-16">
+        <div class="card-header">执行日志</div>
+        <div class="card-body">
+          <pre id="deploy-log" style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;min-height:200px;font-size:13px;font-family:monospace;white-space:pre-wrap;overflow:auto;">等待执行命令...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== Account ========== -->
+    <div class="page-section" id="page-account">
+      <div class="card" style="max-width:480px;">
+        <div class="card-header">修改密码</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>当前密码</label>
+            <input type="password" id="acc-old-pass" placeholder="输入当前密码">
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input type="password" id="acc-new-pass" placeholder="输入新密码">
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input type="password" id="acc-confirm-pass" placeholder="再次输入新密码">
+          </div>
+          <button class="btn btn-primary" onclick="changePassword()">保存修改</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div><!-- end app-wrap -->
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>
