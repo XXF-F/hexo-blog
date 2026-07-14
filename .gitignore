@@ -11,6 +11,7 @@ _multiconfig.yml
 _config.butterfly.yml.bak.*
 _config.yml.bak.*
 
-# 管理后台敏感数据（密码、留言）
+# 管理后台敏感数据（密码、留言、部署 Token）
 admin-panel/data/auth.json
 admin-panel/data/comments_*.json
+admin-panel/data/deploy-token.txt

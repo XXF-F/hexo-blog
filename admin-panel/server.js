@@ -168,7 +168,7 @@ app.get('/api/posts/:slug', (req, res) => {
   res.json({ frontmatter: data, content: body, filename: `${req.params.slug}.md` });
 });
 
-app.post('/api/posts', (req, res) => {
+app.post('/api/posts', async (req, res) => {
   const { title, content, tags, categories, cover, draft } = req.body;
   const blocked = contentFilter.checkPost({ title, content, tags, categories, cover });
   if (blocked.blocked) return contentFilter.rejectResponse(res, blocked);
@@ -185,10 +185,21 @@ app.post('/api/posts', (req, res) => {
 
   const fileContent = matter.stringify(content || '', frontmatter);
   fs.writeFileSync(filepath, fileContent);
-  res.json({ success: true, slug, filename });
+
+  let deployOutput = '';
+  let deployError = '';
+  if (!draft) {
+    try {
+      deployOutput = await runHexoDeploy();
+    } catch (e) {
+      deployError = e.message;
+    }
+  }
+
+  res.json({ success: true, slug, filename, deployed: !draft && !deployError, deployError, deployOutput });
 });
 
-app.put('/api/posts/:slug', (req, res) => {
+app.put('/api/posts/:slug', async (req, res) => {
   const filepath = path.join(POSTS_DIR, `${req.params.slug}.md`);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: '文章不存在' });
 
@@ -211,15 +222,27 @@ app.put('/api/posts/:slug', (req, res) => {
   const fileContent = matter.stringify(content !== undefined ? content : matter(original).content, frontmatter);
   fs.writeFileSync(filepath, fileContent);
 
+  let newSlug = req.params.slug;
   if (title && title !== oldData.title) {
-    const newSlug = title.replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
-    const newPath = path.join(POSTS_DIR, `${newSlug}.md`);
+    const renamed = title.replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
+    const newPath = path.join(POSTS_DIR, `${renamed}.md`);
     if (newPath !== filepath && !fs.existsSync(newPath)) {
       fs.renameSync(filepath, newPath);
-      return res.json({ success: true, slug: newSlug });
+      newSlug = renamed;
     }
   }
-  res.json({ success: true, slug: req.params.slug });
+
+  let deployOutput = '';
+  let deployError = '';
+  if (!frontmatter.draft) {
+    try {
+      deployOutput = await runHexoDeploy();
+    } catch (e) {
+      deployError = e.message;
+    }
+  }
+
+  res.json({ success: true, slug: newSlug, deployed: !frontmatter.draft && !deployError, deployError, deployOutput });
 });
 
 app.delete('/api/posts/:slug', (req, res) => {
@@ -322,13 +345,39 @@ function patchThemeYamlField(raw, key, value) {
   return `${line}\n${raw}`;
 }
 
-function runHexoCmd(cmd) {
+function getDeployToken() {
+  const fromEnv = process.env.HEXO_DEPLOY_TOKEN;
+  if (fromEnv) return fromEnv.trim();
+  const tokenFile = path.join(__dirname, 'data', 'deploy-token.txt');
+  if (fs.existsSync(tokenFile)) return fs.readFileSync(tokenFile, 'utf8').trim();
+  return '';
+}
+
+function runHexoCmd(cmd, needDeployAuth = false) {
   return new Promise((resolve, reject) => {
-    exec(cmd, { cwd: HEXO_ROOT, timeout: 120000 }, (err, stdout, stderr) => {
+    const env = { ...process.env };
+    let askpassPath = '';
+    if (needDeployAuth) {
+      const token = getDeployToken();
+      if (!token) {
+        return reject(new Error('未配置部署 Token。请在服务器创建 admin-panel/data/deploy-token.txt 并写入 GitHub Token'));
+      }
+      askpassPath = path.join(__dirname, 'data', '.git-askpass.sh');
+      fs.writeFileSync(askpassPath, `#!/bin/sh\ncase "$1" in\n  *Username*) echo "xxf-f" ;;\n  *Password*) echo "${token}" ;;\nesac\n`);
+      fs.chmodSync(askpassPath, 0o700);
+      env.GIT_ASKPASS = askpassPath;
+      env.GIT_TERMINAL_PROMPT = '0';
+    }
+    exec(cmd, { cwd: HEXO_ROOT, timeout: 180000, env }, (err, stdout, stderr) => {
+      if (askpassPath && fs.existsSync(askpassPath)) fs.unlinkSync(askpassPath);
       if (err) return reject(new Error(stderr || err.message));
       resolve(stdout);
     });
   });
+}
+
+async function runHexoDeploy() {
+  return runHexoCmd('npx hexo clean && npx hexo generate && npx hexo deploy', true);
 }
 
 function restartHexoServer() {
@@ -515,7 +564,7 @@ app.post('/api/hexo/generate', async (req, res) => {
 
 app.post('/api/hexo/deploy', async (req, res) => {
   try {
-    const output = await runHexoCmd('npx hexo clean && npx hexo generate && npx hexo deploy');
+    const output = await runHexoDeploy();
     res.json({ success: true, output });
   } catch (e) {
     res.status(500).json({ error: e.message });

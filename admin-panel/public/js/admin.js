@@ -214,9 +214,15 @@ async function savePost() {
   }
 
   if (res.success) {
-    toast(slug ? '文章已更新' : '文章已创建');
     document.getElementById('ed-slug').value = res.slug;
     currentEditSlug = res.slug;
+    if (res.deployed) {
+      toast(slug ? '文章已更新并发布到 GitHub' : '文章已创建并发布到 GitHub');
+    } else if (!data.draft && res.deployError) {
+      toast('文章已保存，但发布失败: ' + res.deployError, 'error');
+    } else {
+      toast(slug ? '文章已更新' : (data.draft ? '草稿已保存' : '文章已创建'));
+    }
   } else {
     const msg = res.code === 'CONTENT_BLOCKED'
       ? (res.error || '内容包含违规信息，禁止发布黄赌毒相关内容')
