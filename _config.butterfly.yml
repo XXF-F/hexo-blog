@@ -116,7 +116,7 @@ comments:
   count: false
 
 share:
-  use: sharejs
+  use: 
   sharejs:
     sites: facebook,x,wechat,weibo,qq
 
