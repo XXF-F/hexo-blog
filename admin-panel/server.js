@@ -365,6 +365,8 @@ function patchThemeYamlField(raw, key, value) {
   return `${line}\n${raw}`;
 }
 
+let hexoTaskRunning = false;
+
 function getDeployToken() {
   const fromEnv = process.env.HEXO_DEPLOY_TOKEN;
   if (fromEnv) return fromEnv.trim();
@@ -373,31 +375,92 @@ function getDeployToken() {
   return '';
 }
 
+function resolveNpxCmd() {
+  const nodeBin = path.dirname(process.execPath);
+  const npxPath = path.join(nodeBin, process.platform === 'win32' ? 'npx.cmd' : 'npx');
+  return fs.existsSync(npxPath) ? `"${npxPath}"` : 'npx';
+}
+
+function buildHexoEnv(needDeployAuth = false) {
+  const nodeBin = path.dirname(process.execPath);
+  const env = {
+    ...process.env,
+    PATH: `${nodeBin}${path.delimiter}${process.env.PATH || ''}`,
+    NODE_ENV: process.env.NODE_ENV || 'production',
+  };
+  if (needDeployAuth) {
+    const token = getDeployToken();
+    if (!token) {
+      throw new Error('未配置部署 Token。请在服务器创建 admin-panel/data/deploy-token.txt 并写入 GitHub Token');
+    }
+    const askpassPath = path.join(__dirname, 'data', '.git-askpass.sh');
+    fs.writeFileSync(askpassPath, `#!/bin/sh\ncase "$1" in\n  *Username*) echo "xxf-f" ;;\n  *Password*) echo "${token}" ;;\nesac\n`);
+    fs.chmodSync(askpassPath, 0o700);
+    env.GIT_ASKPASS = askpassPath;
+    env.GIT_TERMINAL_PROMPT = '0';
+    env._HEXO_ASKPASS = askpassPath;
+  }
+  return env;
+}
+
 function runHexoCmd(cmd, needDeployAuth = false) {
   return new Promise((resolve, reject) => {
-    const env = { ...process.env };
-    let askpassPath = '';
-    if (needDeployAuth) {
-      const token = getDeployToken();
-      if (!token) {
-        return reject(new Error('未配置部署 Token。请在服务器创建 admin-panel/data/deploy-token.txt 并写入 GitHub Token'));
-      }
-      askpassPath = path.join(__dirname, 'data', '.git-askpass.sh');
-      fs.writeFileSync(askpassPath, `#!/bin/sh\ncase "$1" in\n  *Username*) echo "xxf-f" ;;\n  *Password*) echo "${token}" ;;\nesac\n`);
-      fs.chmodSync(askpassPath, 0o700);
-      env.GIT_ASKPASS = askpassPath;
-      env.GIT_TERMINAL_PROMPT = '0';
+    let env;
+    try {
+      env = buildHexoEnv(needDeployAuth);
+    } catch (e) {
+      return reject(e);
     }
-    exec(cmd, { cwd: HEXO_ROOT, timeout: 180000, env }, (err, stdout, stderr) => {
+
+    const askpassPath = env._HEXO_ASKPASS;
+    const npx = resolveNpxCmd();
+    const fullCmd = cmd.replace(/\bnpx\b/g, npx);
+
+    exec(fullCmd, {
+      cwd: HEXO_ROOT,
+      timeout: 300000,
+      maxBuffer: 10 * 1024 * 1024,
+      env,
+      shell: true,
+    }, (err, stdout, stderr) => {
       if (askpassPath && fs.existsSync(askpassPath)) fs.unlinkSync(askpassPath);
-      if (err) return reject(new Error(stderr || err.message));
-      resolve(stdout);
+      if (err) {
+        const detail = [stderr, stdout].filter(Boolean).join('\n').trim();
+        return reject(new Error(detail || err.message));
+      }
+      resolve([stdout, stderr].filter(Boolean).join('\n').trim());
     });
   });
 }
 
+function assertGeneratedSite() {
+  const indexPath = path.join(HEXO_ROOT, 'public', 'index.html');
+  if (!fs.existsSync(indexPath)) {
+    throw new Error(
+      '站点生成失败：未找到 public/index.html。请在服务器执行：cd /root/hexo-blog && git pull && npm install && npx hexo clean && npx hexo generate -f'
+    );
+  }
+}
+
+async function runHexoGenerate(force = true) {
+  await runHexoCmd('npx hexo clean');
+  await runHexoCmd(force ? 'npx hexo generate -f' : 'npx hexo generate');
+  assertGeneratedSite();
+}
+
 async function runHexoDeploy() {
-  return runHexoCmd('npx hexo clean && npx hexo generate && npx hexo deploy', true);
+  if (hexoTaskRunning) throw new Error('已有 Hexo 任务正在执行，请稍后再试');
+  hexoTaskRunning = true;
+  try {
+    const parts = [];
+    parts.push(await runHexoCmd('npx hexo clean'));
+    parts.push(await runHexoCmd('npx hexo generate -f'));
+    assertGeneratedSite();
+    parts.push(await runHexoCmd('npx hexo deploy', true));
+    return parts.filter(Boolean).join('\n\n');
+  } finally {
+    hexoTaskRunning = false;
+  }
 }
 
 function restartHexoServer() {
@@ -418,9 +481,17 @@ function restartHexoServer() {
 }
 
 async function regenerateAndRestart() {
-  const output = await runHexoCmd('npx hexo clean && npx hexo generate');
-  const restartMsg = await restartHexoServer();
-  return `${output}\n${restartMsg}`;
+  if (hexoTaskRunning) throw new Error('已有 Hexo 任务正在执行，请稍后再试');
+  hexoTaskRunning = true;
+  try {
+    const output = await runHexoCmd('npx hexo clean');
+    const gen = await runHexoCmd('npx hexo generate -f');
+    assertGeneratedSite();
+    const restartMsg = await restartHexoServer();
+    return `${output}\n${gen}\n${restartMsg}`;
+  } finally {
+    hexoTaskRunning = false;
+  }
 }
 
 app.get('/api/config/background', (req, res) => {
