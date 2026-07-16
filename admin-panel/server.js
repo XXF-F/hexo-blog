@@ -132,6 +132,21 @@ app.get('/api/stats', (req, res) => {
 
 // ==================== Posts API ====================
 
+function applyDownloadFrontmatter(frontmatter, download) {
+  if (download === undefined) return;
+  const dl = {
+    desc: (download.desc || '').trim(),
+    link: (download.link || '').trim(),
+    code: (download.code || '').trim(),
+    pass: (download.pass || '').trim(),
+  };
+  if (dl.desc || dl.link || dl.code || dl.pass) {
+    frontmatter.download = dl;
+  } else {
+    delete frontmatter.download;
+  }
+}
+
 app.get('/api/posts', (req, res) => {
   try {
     const files = fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
@@ -169,7 +184,7 @@ app.get('/api/posts/:slug', (req, res) => {
 });
 
 app.post('/api/posts', async (req, res) => {
-  const { title, content, tags, categories, cover, draft } = req.body;
+  const { title, content, tags, categories, cover, draft, download } = req.body;
   const blocked = contentFilter.checkPost({ title, content, tags, categories, cover });
   if (blocked.blocked) return contentFilter.rejectResponse(res, blocked);
 
@@ -182,6 +197,7 @@ app.post('/api/posts', async (req, res) => {
   const frontmatter = { title, date: new Date().toISOString(), tags: tags || [], categories: categories || [] };
   if (cover) frontmatter.cover = cover;
   if (draft) frontmatter.draft = true;
+  applyDownloadFrontmatter(frontmatter, download);
 
   const fileContent = matter.stringify(content || '', frontmatter);
   fs.writeFileSync(filepath, fileContent);
@@ -203,7 +219,7 @@ app.put('/api/posts/:slug', async (req, res) => {
   const filepath = path.join(POSTS_DIR, `${req.params.slug}.md`);
   if (!fs.existsSync(filepath)) return res.status(404).json({ error: '文章不存在' });
 
-  const { title, content, tags, categories, cover, draft, top } = req.body;
+  const { title, content, tags, categories, cover, draft, top, download } = req.body;
   const blocked = contentFilter.checkPost({ title, content, tags, categories, cover });
   if (blocked.blocked) return contentFilter.rejectResponse(res, blocked);
 
@@ -217,6 +233,7 @@ app.put('/api/posts/:slug', async (req, res) => {
   if (cover !== undefined) frontmatter.cover = cover;
   if (draft !== undefined) frontmatter.draft = draft;
   if (top !== undefined) frontmatter.top = top;
+  applyDownloadFrontmatter(frontmatter, download);
   frontmatter.updated = new Date().toISOString();
 
   const fileContent = matter.stringify(content !== undefined ? content : matter(original).content, frontmatter);
@@ -305,7 +322,7 @@ app.get('/api/config/theme', (req, res) => {
 
 function ensureThemeEssentials(raw) {
   if (!/^inject:/m.test(raw)) {
-    raw += `\ninject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n    - <link rel="stylesheet" href="/css/comments.css">\n    - <link rel="stylesheet" href="/css/favorites.css">\n  bottom:\n    - <script>window.HEXO_MESSAGE_API='http://207.57.123.17:4001/api/comments';</script>\n    - <script src="/js/comments.js"></script>\n    - <script src="/js/favorites.js"></script>\n    - <script src="/js/snow.js"></script>\n`;
+    raw += `\ninject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/snow.js"></script>\n`;
   }
   if (!/^disable_top_img:/m.test(raw)) {
     raw = `disable_top_img: false\nindex_top_img_height: 100vh\n\nmask:\n  header: false\n  footer: true\n\n${raw}`;

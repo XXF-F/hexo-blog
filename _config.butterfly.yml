@@ -6,7 +6,6 @@ nav:
 
 menu:
   首页: / || fas fa-home
-  我的收藏: /favorites/ || fas fa-star
 
 background: /images/OIP-C-mrj5ma6p.webp
 
@@ -95,10 +94,10 @@ math:
   hide_scrollbar: false
 
 search:
-  use: 
-  placeholder: 
+  use: local_search
+  placeholder: 搜索文章...
   local_search:
-    preload: false
+    preload: true
 
 error_404:
   enable: false
@@ -124,9 +123,9 @@ chat:
   use: 
 
 busuanzi:
-  site_uv: true
-  site_pv: true
-  page_pv: true
+  site_uv: false
+  site_pv: false
+  page_pv: false
 
 google_adsense:
   enable: false
@@ -234,10 +233,5 @@ footer:
 inject:
   head:
     - <link rel="stylesheet" href="/css/custom.css">
-    - <link rel="stylesheet" href="/css/comments.css">
-    - <link rel="stylesheet" href="/css/favorites.css">
   bottom:
-    - <script>window.HEXO_MESSAGE_API='http://207.57.123.17:4001/api/comments';</script>
-    - <script src="/js/comments.js"></script>
-    - <script src="/js/favorites.js"></script>
     - <script src="/js/snow.js"></script>

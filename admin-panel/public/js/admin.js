@@ -6,7 +6,7 @@ let currentEditSlug = '';
 // ==================== Navigation ====================
 const pageTitles = {
   dashboard: '仪表盘', posts: '文章管理', editor: '写文章',
-  media: '媒体库', comments: '留言管理', 'theme-config': '主题设置',
+  media: '媒体库', 'theme-config': '主题设置',
   'theme-files': '主题文件', 'custom-css': '自定义 CSS',
   'site-config': '站点设置', deploy: '生成部署', account: '账号管理'
 };
@@ -27,7 +27,6 @@ function navigateTo(page) {
     dashboard: loadDashboard,
     posts: loadPosts,
     media: loadMedia,
-    comments: loadAllComments,
     'theme-config': loadThemeConfig,
     'theme-files': () => loadThemeFiles(''),
     'custom-css': loadCustomCSS,
@@ -171,6 +170,11 @@ async function editPost(slug) {
   document.getElementById('ed-cover').value = data.frontmatter.cover || '';
   renderCoverPreview();
   document.getElementById('ed-draft').checked = !!data.frontmatter.draft;
+  const dl = data.frontmatter.download || {};
+  document.getElementById('ed-dl-desc').value = dl.desc || '';
+  document.getElementById('ed-dl-link').value = dl.link || '';
+  document.getElementById('ed-dl-code').value = dl.code || '';
+  document.getElementById('ed-dl-pass').value = dl.pass || '';
   document.getElementById('ed-content').value = data.content.trim();
   document.getElementById('ed-slug').value = slug;
   currentEditSlug = slug;
@@ -202,7 +206,13 @@ async function savePost() {
     tags: document.getElementById('ed-tags').value.split(',').map(s => s.trim()).filter(Boolean),
     categories: document.getElementById('ed-categories').value.split(',').map(s => s.trim()).filter(Boolean),
     cover: document.getElementById('ed-cover').value.trim(),
-    draft: document.getElementById('ed-draft').checked
+    draft: document.getElementById('ed-draft').checked,
+    download: {
+      desc: document.getElementById('ed-dl-desc').value.trim(),
+      link: document.getElementById('ed-dl-link').value.trim(),
+      code: document.getElementById('ed-dl-code').value.trim(),
+      pass: document.getElementById('ed-dl-pass').value.trim(),
+    }
   };
 
   const slug = document.getElementById('ed-slug').value;
@@ -232,7 +242,8 @@ async function savePost() {
 }
 
 function resetEditor() {
-  ['ed-title', 'ed-tags', 'ed-categories', 'ed-cover', 'ed-content', 'ed-slug'].forEach(id => {
+  ['ed-title', 'ed-tags', 'ed-categories', 'ed-cover', 'ed-content', 'ed-slug',
+   'ed-dl-desc', 'ed-dl-link', 'ed-dl-code', 'ed-dl-pass'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('ed-draft').checked = false;
@@ -721,7 +732,7 @@ function buildThemeYaml() {
   if (social.length) { y += `social:\n`; social.forEach(l => y += `  ${l.trim()}\n`); y += `\n`; }
   y += `footer:\n  owner:\n    enable: true\n    since: ${v('tc-footer-since')}\n  copyright:\n    enable: ${v('tc-footer-copyright')}\n    version: true\n  custom_text: ${v('tc-footer-custom')}\n\n`;
 
-  y += `inject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n    - <link rel="stylesheet" href="/css/comments.css">\n    - <link rel="stylesheet" href="/css/favorites.css">\n  bottom:\n    - <script>window.HEXO_MESSAGE_API='http://207.57.123.17:4001/api/comments';</script>\n    - <script src="/js/comments.js"></script>\n    - <script src="/js/favorites.js"></script>\n    - <script src="/js/snow.js"></script>\n`;
+  y += `inject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/snow.js"></script>\n`;
 
   return y;
 }
@@ -931,33 +942,6 @@ document.addEventListener('keydown', e => {
     else if (activePage === 'page-theme-files' && currentThemeFilePath) saveThemeFile();
   }
 });
-
-// ==================== Messages Admin ====================
-async function loadAllComments() {
-  const comments = await api('/api/comments-all');
-  const el = document.getElementById('comments-list');
-  if (!comments.length) { el.innerHTML = '<p class="text-muted">暂无留言</p>'; return; }
-  el.innerHTML = `<table>
-    <thead><tr><th>称呼</th><th>联系方式</th><th>留言内容</th><th>来源页面</th><th>时间</th><th>操作</th></tr></thead>
-    <tbody>${comments.map(c => `
-      <tr>
-        <td><strong>${esc(c.nickname)}</strong></td>
-        <td class="text-sm">${c.email ? esc(c.email) : '<span class="text-muted">未留</span>'}</td>
-        <td style="max-width:280px;white-space:pre-wrap;word-break:break-word;">${esc(c.content)}</td>
-        <td class="text-sm text-muted">${esc(c.slug)}</td>
-        <td class="text-sm text-muted">${fmtDate(c.date)}</td>
-        <td><button class="btn btn-sm btn-danger" onclick="deleteComment('${esc(c.slug)}','${c.id}')">删除</button></td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-
-async function deleteComment(slug, id) {
-  if (!confirm('确定删除这条留言？')) return;
-  const res = await api(`/api/comments/${slug}/${id}`, { method: 'DELETE' });
-  if (res.success) { toast('留言已删除'); loadAllComments(); }
-  else toast(res.error || '删除失败', 'error');
-}
 
 // ==================== Menu Editor ====================
 const MENU_ICON_OPTIONS = [

@@ -45,7 +45,6 @@
     <div class="nav-item" data-page="posts"><span class="icon">▤</span> 文章 <span class="badge" id="post-count">0</span></div>
     <div class="nav-item" data-page="editor"><span class="icon">✎</span> 写文章</div>
     <div class="nav-item" data-page="media"><span class="icon">▣</span> 媒体库</div>
-    <div class="nav-item" data-page="comments"><span class="icon">◫</span> 留言</div>
 
     <div class="nav-section">外观</div>
     <div class="nav-item" data-page="theme-config"><span class="icon">◈</span> 主题设置</div>
@@ -82,7 +81,6 @@
           <button class="btn btn-outline" onclick="navigateTo('theme-config')">主题设置</button>
           <button class="btn btn-outline" onclick="navigateTo('theme-config');setTimeout(()=>document.getElementById('bg-section')?.scrollIntoView({behavior:'smooth'}),200)">换背景</button>
           <button class="btn btn-outline" onclick="runGenerate()">重新生成</button>
-          <button class="btn btn-outline" onclick="navigateTo('comments')">查看留言</button>
         </div>
       </div>
       <div class="card">
@@ -134,6 +132,30 @@
                 <input type="file" id="ed-cover-file" accept="image/*" style="display:none" onchange="uploadCoverFile(this.files)">
                 <input type="hidden" id="ed-cover">
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div class="card-header">📥 资源下载区</div>
+        <div class="card-body">
+          <p class="text-sm text-muted mb-16">每篇文章底部会固定显示此区域，填写后访客可直接获取下载信息。</p>
+          <div class="form-group">
+            <label>资源说明</label>
+            <input type="text" id="ed-dl-desc" placeholder="例如：某某软件 电脑版（转百度网盘）">
+          </div>
+          <div class="form-group">
+            <label>下载链接</label>
+            <input type="url" id="ed-dl-link" placeholder="https://pan.baidu.com/...">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label>获取码</label>
+              <input type="text" id="ed-dl-code" placeholder="例如：1W45ZLSZ">
+            </div>
+            <div class="form-group">
+              <label>解压码</label>
+              <input type="text" id="ed-dl-pass" placeholder="例如：ziyanghua">
             </div>
           </div>
         </div>
@@ -642,17 +664,6 @@
             <textarea id="site-config-editor" class="code-editor" spellcheck="false"></textarea>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ========== Messages Management ========== -->
-    <div class="page-section" id="page-comments">
-      <div class="card">
-        <div class="card-header">
-          <span>全部留言（仅管理员可见）</span>
-          <button class="btn btn-outline btn-sm" onclick="loadAllComments()">🔄 刷新</button>
-        </div>
-        <div class="card-body table-wrap" id="comments-list"></div>
       </div>
     </div>
 
