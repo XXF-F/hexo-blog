@@ -322,7 +322,10 @@ app.get('/api/config/theme', (req, res) => {
 
 function ensureThemeEssentials(raw) {
   if (!/^inject:/m.test(raw)) {
-    raw += `\ninject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/snow.js"></script>\n`;
+    raw += `\ninject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/nav-search.js"></script>\n    - <script src="/js/snow.js"></script>\n`;
+  }
+  if (!/^aside:/m.test(raw)) {
+    raw += `\naside:\n  card_webinfo:\n    enable: false\n\n`;
   }
   if (!/^disable_top_img:/m.test(raw)) {
     raw = `disable_top_img: false\nindex_top_img_height: 100vh\n\nmask:\n  header: false\n  footer: true\n\n${raw}`;

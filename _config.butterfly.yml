@@ -18,6 +18,10 @@ mask:
 
 index_layout: 3
 
+aside:
+  card_webinfo:
+    enable: false
+
 index_post_content:
   method: false
   length: 500
@@ -234,4 +238,5 @@ inject:
   head:
     - <link rel="stylesheet" href="/css/custom.css">
   bottom:
+    - <script src="/js/nav-search.js"></script>
     - <script src="/js/snow.js"></script>

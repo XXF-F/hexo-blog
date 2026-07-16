@@ -654,7 +654,7 @@ function buildThemeYaml() {
 
   y += `disable_top_img: false\nindex_top_img_height: 100vh\n\nmask:\n  header: false\n  footer: true\n\n`;
 
-  y += `index_layout: ${v('tc-index-layout')}\n\nindex_post_content:\n  method: ${v('tc-post-content-method')}\n  length: ${v('tc-post-content-length')}\n\n`;
+  y += `index_layout: ${v('tc-index-layout')}\n\naside:\n  card_webinfo:\n    enable: false\n\nindex_post_content:\n  method: ${v('tc-post-content-method')}\n  length: ${v('tc-post-content-length')}\n\n`;
 
   y += `cover:\n  index_enable: ${v('tc-cover-index')}\n  aside_enable: ${v('tc-cover-aside')}\n  archives_enable: ${v('tc-cover-archives')}\n`;
   const covers = lines('tc-cover-default');
@@ -732,7 +732,7 @@ function buildThemeYaml() {
   if (social.length) { y += `social:\n`; social.forEach(l => y += `  ${l.trim()}\n`); y += `\n`; }
   y += `footer:\n  owner:\n    enable: true\n    since: ${v('tc-footer-since')}\n  copyright:\n    enable: ${v('tc-footer-copyright')}\n    version: true\n  custom_text: ${v('tc-footer-custom')}\n\n`;
 
-  y += `inject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/snow.js"></script>\n`;
+  y += `inject:\n  head:\n    - <link rel="stylesheet" href="/css/custom.css">\n  bottom:\n    - <script src="/js/nav-search.js"></script>\n    - <script src="/js/snow.js"></script>\n`;
 
   return y;
 }
