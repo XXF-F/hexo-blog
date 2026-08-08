@@ -9,25 +9,55 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function looksLikeUrl(str) {
+  return /^https?:\/\//i.test(String(str || '').trim());
+}
+
+function extractCodeFromLink(link) {
+  try {
+    const u = new URL(link);
+    const seg = u.pathname.split('/').filter(Boolean).pop();
+    return seg || '';
+  } catch {
+    return '';
+  }
+}
+
+function resolveGetText(link, code) {
+  const c = String(code || '').trim();
+  const l = String(link || '').trim();
+
+  // 正常：获取码是短码，不是 URL
+  if (c && !looksLikeUrl(c) && c !== l) return c;
+
+  // 获取码误填成链接时，从链接路径取最后一段作为显示文字
+  if (l) {
+    const fromLink = extractCodeFromLink(l);
+    if (fromLink) return fromLink;
+  }
+
+  if (c && !looksLikeUrl(c)) return c;
+  return '点击获取';
+}
+
 function buildDownloadBlock(download) {
   const dl = download || {};
-  const link = escapeHtml(dl.link || '').trim();
-  const code = escapeHtml(dl.code || '').trim();
-  const pass = escapeHtml(dl.pass || '').trim();
+  const link = String(dl.link || '').trim();
+  const code = String(dl.code || '').trim();
+  const pass = String(dl.pass || '').trim();
 
-  // 获取：显示获取码文字，点击跳转到下载链接（不直接展示完整 URL）
+  const href = escapeHtml(looksLikeUrl(link) ? link : (looksLikeUrl(code) ? code : link));
+  const text = escapeHtml(resolveGetText(link, code));
+  const passHtml = pass ? escapeHtml(pass) : '<span class="post-download-placeholder">—</span>';
+
   let getHtml;
-  if (link && code) {
-    getHtml = `<a class="post-download-get-link" href="${link}" target="_blank" rel="noopener noreferrer">${code}</a>`;
-  } else if (link) {
-    getHtml = `<a class="post-download-get-link" href="${link}" target="_blank" rel="noopener noreferrer">点击获取</a>`;
-  } else if (code) {
-    getHtml = code;
+  if (href) {
+    getHtml = `<a class="post-download-get-link" href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+  } else if (text && text !== '点击获取') {
+    getHtml = text;
   } else {
     getHtml = '<span class="post-download-placeholder">—</span>';
   }
-
-  const passHtml = pass || '<span class="post-download-placeholder">—</span>';
 
   return `
 <div class="post-download-section">
