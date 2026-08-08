@@ -139,25 +139,22 @@
       <div class="card mb-16">
         <div class="card-header">📥 资源下载区</div>
         <div class="card-body">
-          <p class="text-sm text-muted mb-16">每篇文章底部会固定显示此区域，填写后访客可直接获取下载信息。</p>
+          <p class="text-sm text-muted mb-16">前台只显示：获取码（可点击跳转）+ 解压码。下载链接不会直接露出完整地址。</p>
           <div class="form-group">
-            <label>资源说明</label>
-            <input type="text" id="ed-dl-desc" placeholder="例如：某某软件 电脑版（转百度网盘）">
-          </div>
-          <div class="form-group">
-            <label>下载链接</label>
-            <input type="url" id="ed-dl-link" placeholder="https://pan.baidu.com/...">
+            <label>下载链接（点击「获取」时跳转，不直接展示）</label>
+            <input type="url" id="ed-dl-link" placeholder="https://share.anheyu.com/share/...">
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group">
-              <label>获取码</label>
-              <input type="text" id="ed-dl-code" placeholder="例如：1W45ZLSZ">
+              <label>获取码（前台显示为链接文字）</label>
+              <input type="text" id="ed-dl-code" placeholder="例如：5P6WDTQG">
             </div>
             <div class="form-group">
               <label>解压码</label>
               <input type="text" id="ed-dl-pass" placeholder="例如：ziyanghua">
             </div>
           </div>
+          <input type="hidden" id="ed-dl-desc" value="">
         </div>
       </div>
       <div class="card mb-16">
