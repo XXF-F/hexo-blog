@@ -110,5 +110,5 @@ theme: butterfly
 ## 把 yourname 换成你的 GitHub 用户名
 deploy:
   type: git
-  repo: https://github.com/xxf-f/xxf-f.github.io.git
+  repo: https://github.com/XXF-F/xxf-f.github.io.git
   branch: main

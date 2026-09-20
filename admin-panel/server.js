@@ -394,7 +394,7 @@ function buildHexoEnv(needDeployAuth = false) {
       throw new Error('未配置部署 Token。请在服务器创建 admin-panel/data/deploy-token.txt 并写入 GitHub Token');
     }
     const askpassPath = path.join(__dirname, 'data', '.git-askpass.sh');
-    fs.writeFileSync(askpassPath, `#!/bin/sh\ncase "$1" in\n  *Username*) echo "xxf-f" ;;\n  *Password*) echo "${token}" ;;\nesac\n`);
+      fs.writeFileSync(askpassPath, `#!/bin/sh\ncase "$1" in\n  *Username*) echo "XXF-F" ;;\n  *Password*) echo "${token}" ;;\nesac\n`);
     fs.chmodSync(askpassPath, 0o700);
     env.GIT_ASKPASS = askpassPath;
     env.GIT_TERMINAL_PROMPT = '0';
